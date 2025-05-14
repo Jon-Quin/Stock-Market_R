@@ -1,0 +1,143 @@
+---
+title: "Stock Market 2010-2024"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: 
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(lubridate)
+library(tidyr)
+library(gt)
+library(gtExtras)
+```
+
+```{r}
+market <- read.csv('/Users/jonatanquintana/Downloads/data_for_r.csv')
+```
+
+Column {data-width=550}
+--------------------------------------------------
+
+### Chart one
+```{r}
+market_year <- market %>% 
+  select(contains('Close'), 'Date') %>% 
+  mutate(year = year(Date)) %>% 
+  group_by(year) %>% 
+  summarise(across(where(is.numeric), ~mean(.x))) %>% 
+  pivot_longer(col = 2:6,
+               names_to = 'Company',
+               values_to = 'Close_price') 
+
+market_year$Company <- recode(market_year$Company,
+                              "Close_AAPL" = "Apple",
+                              "Close_AMZN" = "Amazon",
+                              "Close_GOOGL" = "Google",
+                              "Close_MSFT" = "Microsoft",
+                              "Close_NVDA" = "Nvidia")
+
+p <- plot_ly(data = market_year,
+        x = ~year,
+        y = ~Close_price,
+        color = ~Company,
+        colors = c(
+          "Apple" = "black",
+          "Amazon" = "#1399FF",
+          "Google" = "#FDDA0D",
+          "Microsoft" = "#F14F21",
+          "Nvidia" = "#76B900"
+        ),
+        type = 'scatter',
+        mode = 'lines') %>% 
+  layout(title = list(text = 'Stock Market 2010-2024',
+                      y = 0.95,
+                      x = 0.45),
+         yaxis = list(title = 'Closing Price'),
+         xaxis = list(title ='Year'))
+p %>% 
+  config(displayModeBar = FALSE)
+                     
+```
+
+Column {data-width=450}
+--------------------------------------------------
+
+### Chart Two
+```{r}
+Beginning <- market %>% 
+  select(contains('Close'), Date) %>% 
+  filter(Date == '2010-01-04') %>% 
+  pivot_longer(col = 1:5,
+               names_to = 'Company',
+               values_to = 'start_price')
+
+Ending <- market %>% 
+  select(contains('Close'), Date) %>% 
+  filter(Date == '2024-12-31') %>% 
+  pivot_longer(col = 1:5,
+               names_to = 'Brand',
+               values_to = 'final_price')
+
+Percentages <- bind_cols(Beginning, Ending)
+
+Percentages %>% 
+    mutate(Company = recode(Company,
+                          Close_AAPL = 'AAPL',
+                          Close_AMZN = 'AMZN',
+                          Close_GOOGL = 'GOOGL',
+                          Close_MSFT = 'MSFT',
+                          Close_NVDA = 'NVDA')) %>% 
+  mutate(pct = round(((final_price - start_price) / start_price)* 100, 1),
+         label = paste0(Company, ": ", round(pct), "%")) %>% 
+  ggplot(aes(x = '', y = pct, fill = Company)) + 
+  geom_bar(stat = 'identity', width = 1) + 
+  coord_polar(theta = "y") + 
+  geom_text(aes(label = label), position = position_stack(vjust = 0.5)) + 
+  theme_void() + 
+  scale_fill_manual(labels = c('AAPL', 'AMZN', 'GOOGL',
+                                'MSFT', 'NVDA'),
+                     values = c('#A2AAAD','#1399FF','#FDDA0D','#F14F21','#76B900')) + 
+  labs(title = 'Growth percentage from 2010 to 2024') +
+  theme(plot.title = element_text(hjust = 0.4, vjust = -5))
+```
+
+### Chart Three
+
+```{r}
+Beginning <- market %>% 
+  select(contains('Close'), Date) %>% 
+  filter(Date == '2010-01-04') %>% 
+  pivot_longer(col = 1:5,
+               names_to = 'Company',
+               values_to = 'start_price')
+
+Ending <- market %>% 
+  select(contains('Close'), Date) %>% 
+  filter(Date == '2024-12-31') %>% 
+  pivot_longer(col = 1:5,
+               names_to = 'Brand',
+               values_to = 'final_price')
+
+Percentages <- bind_cols(Beginning, Ending)
+
+Percentages %>% 
+  mutate(Company = recode(Company,
+                          Close_AAPL = 'Apple',
+                          Close_AMZN = 'Amazon',
+                          Close_GOOGL = 'Google',
+                          Close_MSFT = 'Microsoft',
+                          Close_NVDA = 'Nvidia')) %>% 
+  rename(Initial_Date = Date...1) %>% 
+  rename(Recent_Date = Date...4) %>% 
+  mutate(across(c(start_price, final_price), ~round(.x, 1))) %>% 
+  select(Company, Initial_Date, start_price, Recent_Date, final_price) %>% 
+  gt() %>% 
+  gt_theme_nytimes() %>% 
+  tab_header(title = 'Beginning & Latest Closing Price') 
+```
+
