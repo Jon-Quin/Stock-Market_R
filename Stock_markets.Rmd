@@ -17,7 +17,7 @@ library(gtExtras)
 ```
 
 ```{r}
-market <- read.csv('/Users/jonatanquintana/Downloads/data_for_r.csv')
+market <- read.csv('/Users/jonatanquintana/Downloads/15 Years Stock Data of NVDA AAPL MSFT GOOGL and AMZN.csv')
 ```
 
 Column {data-width=550}
