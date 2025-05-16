@@ -23,7 +23,7 @@ market <- read.csv('/Users/jonatanquintana/Downloads/15 Years Stock Data of NVDA
 Column {data-width=550}
 --------------------------------------------------
 
-### Chart one
+### Chart one(Interactive)
 ```{r}
 market_year <- market %>% 
   select(contains('Close'), 'Date') %>% 
